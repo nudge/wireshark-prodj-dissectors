@@ -45,6 +45,20 @@ pdj_status_f.type = ProtoField.uint8("pdj_status.type", "Packet Type", base.HEX,
 pdj_status_f.device = ProtoField.uint8("pdj_status.device", "Device Number", base.DEC)
 pdj_status_f.name = ProtoField.stringz("pdj_status.name", "Device Name", base.ASCII)
 
+pdj_status_f.t29_unk0 = ProtoField.uint8("pdj_status.unk0", "Unknown 0", base.HEX)
+pdj_status_f.t29_unk1 = ProtoField.uint8("pdj_status.unk1", "Unknown 1", base.HEX)
+pdj_status_f.t29_length = ProtoField.uint16("pdj_status.length", "Length", base.DEC)
+pdj_status_f.t29_device = ProtoField.uint8("pdj_status.device2", "Device Number 2", base.DEC)
+pdj_status_f.t29_unk2 = ProtoField.uint16("pdj_status.unk2", "Unknown 2", base.HEX)
+pdj_status_f.t29_pitch = ProtoField.uint32("pdj_status.pitch", "Pitch", base.HEX)
+pdj_status_f.t29_unk3 = ProtoField.uint16("pdj_status.unk2", "Unknown 3", base.HEX)
+pdj_status_f.t29_bpm = ProtoField.uint16("pdj_status.unk2", "BPM", base.HEX)
+pdj_status_f.t29_unk4 = ProtoField.uint16("pdj_status.unk2", "Unknown 4", base.HEX)
+pdj_status_f.t29_unk5 = ProtoField.uint16("pdj_status.unk2", "Unknown 5", base.HEX)
+pdj_status_f.t29_unk6 = ProtoField.uint16("pdj_status.unk2", "Unknown 6", base.HEX)
+pdj_status_f.t29_beat = ProtoField.uint8("pdj_status.mh", "Beat", base.DEC)
+pdj_status_f.t29_mh = ProtoField.uint8("pdj_status.mh", "Master Handoff", base.HEX)
+
 pdj_status_f.flags = ProtoField.uint8("pdj_status.flags", "Flags", base.HEX)
 pdj_status_f.flags_unk0 = ProtoField.uint8("pdj_status.flags.unk0", "Unknown 0", base.DEC, nil, 0x80)
 pdj_status_f.flags_play = ProtoField.uint8("pdj_status.flags.play", "Play", base.DEC, nil, 0x40)
@@ -108,6 +122,12 @@ function p_pdj_status.dissector (buf, pkt, root)
     subtree_flags:add(pdj_status_f.flags_bpm, flags_ptr)
 
   elseif packet_type == 0x29 then
+    subtree_flags = subtree:add(pdj_status_f.t29_unk0, buf(0x1f,1))
+    subtree_flags = subtree:add(pdj_status_f.t29_unk1, buf(0x20,1))
+    subtree_flags = subtree:add(pdj_status_f.t29_length, buf(0x22,2))
+    subtree_flags = subtree:add(pdj_status_f.t29_device, buf(0x24,1))
+    subtree_flags = subtree:add(pdj_status_f.t29_unk2, buf(0x25,2))
+    
     local flags_ptr = buf(0x27,1)
     subtree_flags = subtree:add(pdj_status_f.flags, flags_ptr)
     subtree_flags:add(pdj_status_f.flags_unk0, flags_ptr)
@@ -116,6 +136,15 @@ function p_pdj_status.dissector (buf, pkt, root)
     subtree_flags:add(pdj_status_f.flags_sync, flags_ptr)
     subtree_flags:add(pdj_status_f.flags_onair, flags_ptr)
     subtree_flags:add(pdj_status_f.flags_bpm, flags_ptr)
+
+    subtree_flags = subtree:add(pdj_status_f.t29_pitch, buf(0x28,4))
+    subtree_flags = subtree:add(pdj_status_f.t29_unk3, buf(0x2c,2))
+    subtree_flags = subtree:add(pdj_status_f.t29_bpm, buf(0x2e,2))
+    subtree_flags = subtree:add(pdj_status_f.t29_unk4, buf(0x30,2))
+    subtree_flags = subtree:add(pdj_status_f.t29_unk5, buf(0x32,2))
+    subtree_flags = subtree:add(pdj_status_f.t29_unk6, buf(0x34,2))
+    subtree_flags = subtree:add(pdj_status_f.t29_mh, buf(0x36,1))
+    subtree_flags = subtree:add(pdj_status_f.t29_beat, buf(0x37,1))
 
   end
 
