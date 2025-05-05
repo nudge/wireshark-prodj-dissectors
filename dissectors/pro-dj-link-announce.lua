@@ -106,7 +106,7 @@ pdj_announce_f.t0a_unk2 = ProtoField.uint8("pdj_announce.unk2", "Unknown 2", bas
 function p_pdj_announce.dissector (buf, pkt, root)
 
   if buf:len() == 0 then return end
-  end_position = buf:len()
+  buf_len = buf:len()
 
   local preamble_ptr = buf(0,10)
   local packet_type_ptr = buf(0x0a,1)
@@ -127,7 +127,7 @@ function p_pdj_announce.dissector (buf, pkt, root)
   -- Create subtree
   local subtree = root:add(
     p_pdj_status,
-    buf(0,end_position),
+    buf(0,buf_len),
     "AlphaTheta PRO DJ LINK Protocol (Announce), Type: " .. packet_type_description .. ", From: " .. name
   )
   pkt.cols.protocol = 'PRODJ Announce'
@@ -205,7 +205,7 @@ function p_pdj_announce.dissector (buf, pkt, root)
     subtree:add(pdj_announce_f.t0a_unk1, buf(0x21,1))
     subtree:add(pdj_announce_f.t0a_length, buf(0x22,2))
     subtree:add(pdj_announce_f.t0a_device_type, buf(0x24,1))
-    if end_position == 38 then
+    if buf_len == 38 then
       subtree:add(pdj_announce_f.t0a_unk2, buf(0x25,1))
     end
 

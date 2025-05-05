@@ -71,7 +71,7 @@ pdj_status_f.flags_bpm = ProtoField.uint8("pdj_status.flags.bpm", "BPM", base.DE
 function p_pdj_status.dissector (buf, pkt, root)
 
   if buf:len() == 0 then return end
-  end_position = buf:len()
+  buf_len = buf:len()
 
   local preamble_ptr = buf(0,10)
   local device_number_ptr = buf(0x21,1)
@@ -92,7 +92,7 @@ function p_pdj_status.dissector (buf, pkt, root)
   -- Create subtree
   local subtree = root:add(
     p_pdj_status,
-    buf(0,end_position),
+    buf(0,buf_len),
     "AlphaTheta PRO DJ LINK Protocol (Status), Type: " .. packet_type_description .. ", From: " .. name
   )
   pkt.cols.protocol = 'PRODJ Status'

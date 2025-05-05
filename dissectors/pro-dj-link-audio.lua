@@ -56,7 +56,7 @@ local pdj_audio_convo = {}
 function p_pdj_audio.dissector (buf, pkt, root)
 
   if buf:len() == 0 then return end
-  end_position = buf:len()
+  buf_len = buf:len()
 
   local preamble_ptr = buf(0,10)
   local device_number_ptr = buf(0x21,1)
@@ -77,7 +77,7 @@ function p_pdj_audio.dissector (buf, pkt, root)
   -- Create subtree
   local subtree = root:add(
     p_pdj_audio,
-    buf(0,end_position),
+    buf(0,buf_len),
     "AlphaTheta PRO DJ LINK Protocol (Audio), Type: " .. packet_type_description .. ", From: " .. name
   )
   pkt.cols.protocol = 'PRODJ Audio'
@@ -97,7 +97,7 @@ function p_pdj_audio.dissector (buf, pkt, root)
 
   -- Audio Data
   if packet_type == 0x1e then
-    audio_len = end_position - 0x2c
+    audio_len = buf_len - 0x2c
     subtree:add(pdj_audio_f.audio_length, buf(0x22,2))
 
     convo_id = buf(0x28,4):uint()
