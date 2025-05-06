@@ -9,7 +9,8 @@ Based on the awesome [dysentery](https://github.com/Deep-Symmetry/dysentery) pro
 Copy all `.lua` files to:
 
 - (Windows)      `%APPDATA%\Wireshark\plugins\`
-- (Linux, Mac)   `$HOME/.wireshark/plugins`
+- (Linux)        `$HOME/.wireshark/plugins`
+- (Mac)          `$HOME/.config/wireshark/plugins`
 
 
 ## Screenshots
