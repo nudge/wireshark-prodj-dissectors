@@ -57,7 +57,7 @@ pdj_beat_f.t03_fader6 = ProtoField.uint8("pdj_beat.fader6", "Fader 6", base.DEC)
 
 pdj_beat_f.t0b_track_len = ProtoField.uint32("pdj_beat.track_len", "Track Length (sec)", base.DEC)
 pdj_beat_f.t0b_playhead = ProtoField.uint32("pdj_beat.playhead", "Playhead (ms)", base.DEC)
-pdj_beat_f.t0b_pitch = ProtoField.uint32("pdj_beat.pitch", "Pitch", base.DEC)
+pdj_beat_f.t0b_pitch = ProtoField.int32("pdj_beat.pitch", "Pitch", base.DEC)
 pdj_beat_f.t0b_bpm = ProtoField.uint32("pdj_beat.bpm", "BPM", base.DEC)
 
 -- AlphaTheta PRO DJ LINK Protocol (Beat): Dissector
@@ -126,14 +126,14 @@ function p_pdj_beat.dissector (buf, pkt, root)
   -- Absolute Position
   elseif packet_type == 0x0b then
     local pitch_ptr = buf(0x2c,4)
-    local pitch = pitch_ptr:uint()
+    local pitch = pitch_ptr:int()
     local pitch_display = pitch / 100
     
     local bpm_ptr = buf(0x38,4)
     local bpm = bpm_ptr:uint()
     local bpm_display = "Unknown"
     if bpm ~= 0xFFFFFFFF then
-      local bpm_display = bpm / 10
+      bpm_display = bpm / 10
     end
 
     subtree:add(pdj_beat_f.t0b_track_len, buf(0x24,4))
