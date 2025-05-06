@@ -10,7 +10,9 @@ Copy all `.lua` files to:
 
 - (Windows)      `%APPDATA%\Wireshark\plugins\`
 - (Linux)        `$HOME/.wireshark/plugins`
-- (Mac)          `$HOME/.config/wireshark/plugins`
+- (Mac)          `$HOME/.config/wireshark/plugins` (you may need to create the `plugins` folder).
+                  If the `wireshark` directory doesn't exist in `.config`, try `$HOME/.wireshark/plugins` instead —
+                  both paths may work depending on your Wireshark version.
 
 
 ## Screenshots
