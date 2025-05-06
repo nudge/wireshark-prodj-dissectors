@@ -125,10 +125,21 @@ function p_pdj_beat.dissector (buf, pkt, root)
 
   -- Absolute Position
   elseif packet_type == 0x0b then
+    local pitch_ptr = buf(0x2c,4)
+    local pitch = pitch_ptr:uint()
+    local pitch_display = pitch / 100
+    
+    local bpm_ptr = buf(0x38,4)
+    local bpm = bpm_ptr:uint()
+    local bpm_display = "Unknown"
+    if bpm ~= 0xFFFFFFFF then
+      local bpm_display = bpm / 10
+    end
+
     subtree:add(pdj_beat_f.t0b_track_len, buf(0x24,4))
     subtree:add(pdj_beat_f.t0b_playhead, buf(0x28,4))
-    subtree:add(pdj_beat_f.t0b_pitch, buf(0x2c,4))
-    subtree:add(pdj_beat_f.t0b_bpm, buf(0x38,4))
+    subtree:add(pdj_beat_f.t0b_pitch, pitch_ptr, pitch, nil, "(" .. pitch_display .. " %)")
+    subtree:add(pdj_beat_f.t0b_bpm, bpm_ptr, bpm, nil, "(" .. bpm_display .. " bpm)")
 
   end
   
