@@ -315,8 +315,11 @@ function p_pdj_status.dissector (buf, pkt, root)
     subtree:add(pdj_status_f.t0a_pitch4, pitch4_ptr, pitch4, nil, "(" .. pitch4_display .. "%)")
 
     local bpm_ptr = buf(0x92,2)
-    local bpm = bpm_ptr:uint()
-    local bpm_display = bpm / 100
+    local bpm = bpm_ptr:uint() 
+    local bpm_display = "Unknown"
+    if bpm ~= 0xFFFF then
+      bpm_display = bpm / 10
+    end
     subtree:add(pdj_status_f.t0a_bpm, bpm_ptr, bpm, nil, "(" .. bpm_display .. " bpm)")
 
     subtree:add(pdj_status_f.t0a_mv, buf(0x90,2))
