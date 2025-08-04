@@ -99,6 +99,12 @@ local pdj_status_master_meaningful_states = {
    [0x02] = "No: playing non-rekordbox track"
 }
 
+local pdj_status_nexus = {
+   [0x05] = "pre-nexus",
+   [0x0f] = "nexus",
+   [0x1f] = "XDJ-XZ, -AZ, CDJ-3000"
+}
+
 local pdj_status_waveform_colors = {
    [0x01] = "Blue",
    [0x02] = "RGB",
@@ -115,6 +121,37 @@ local pdj_status_buffer = {
    [0x01] = "Entire track buffered"
 }
 
+local pdj_status_off_on = {
+   [0x00] = "Off",
+   [0x01] = "On"
+}
+
+local pdj_status_key = {
+   [0x000000] = "Am",
+   [0x0100ff] = "B♭m",
+   [0x020000] = "Bm",
+   [0x030000] = "Cm",
+   [0x040001] = "C♯m",
+   [0x050000] = "Dm",
+   [0x0600ff] = "E♭m",
+   [0x070000] = "Em",
+   [0x080000] = "Fm",
+   [0x090001] = "F♯m",
+   [0x0a0000] = "Gm",
+   [0x0b00ff] = "A♭m",
+   [0x000100] = "C",
+   [0x0101ff] = "D♭",
+   [0x020100] = "D",
+   [0x0301ff] = "E♭",
+   [0x040100] = "E",
+   [0x050100] = "F",
+   [0x060101] = "F♯",
+   [0x070100] = "G",
+   [0x0801ff] = "A♭",
+   [0x090100] = "A",
+   [0x0a01ff] = "B♭",
+   [0x0b0100] = "B"
+}
 
 local pdj_status_f = p_pdj_status.fields
 pdj_status_f.preamble = ProtoField.bytes("pdj_status.preamble", "Preamble")
@@ -122,6 +159,7 @@ pdj_status_f.type = ProtoField.uint8("pdj_status.type", "Packet Type", base.HEX,
 pdj_status_f.device = ProtoField.uint8("pdj_status.device", "Device Number", base.DEC)
 pdj_status_f.name = ProtoField.stringz("pdj_status.name", "Device Name", base.ASCII)
 
+-- CDJs send these
 pdj_status_f.t0a_length = ProtoField.uint16("pdj_status.length", "Length", base.DEC)
 pdj_status_f.t0a_device = ProtoField.uint8("pdj_status.device2", "Device Number 2", base.DEC)
 pdj_status_f.t0a_activity = ProtoField.uint8("pdj_status.a", "Activity", base.HEX, pdj_status_activity_values)
@@ -148,7 +186,7 @@ pdj_status_f.t0a_beat = ProtoField.int32("pdj_status.beat", "Beat", base.DEC)
 pdj_status_f.t0a_bb = ProtoField.uint8("pdj_status.bb", "Beat in Bar", base.DEC)
 pdj_status_f.t0a_cue = ProtoField.uint16("pdj_status.cue", "Cue countdown", base.HEX)
 pdj_status_f.t0a_packet = ProtoField.uint32("pdj_status.packet", "Packet #", base.DEC)
-pdj_status_f.t0a_nx = ProtoField.uint8("pdj_status.nx", "Nexus?", base.HEX)
+pdj_status_f.t0a_nx = ProtoField.uint8("pdj_status.nx", "Nexus?", base.HEX, pdj_status_nexus)
 
 -- Available from newer players only
 pdj_status_f.t0a_wc = ProtoField.uint8("pdj_status.wc", "Waveform Color", base.HEX, pdj_status_waveform_colors)
@@ -156,10 +194,15 @@ pdj_status_f.t0a_wp = ProtoField.uint8("pdj_status.wp", "Waveform Position", bas
 pdj_status_f.t0a_buf_f = ProtoField.uint8("pdj_status.buf_f", "Buffered Forward", base.DEC)
 pdj_status_f.t0a_buf_b = ProtoField.uint8("pdj_status.buf_b", "Buffered Back", base.DEC)
 pdj_status_f.t0a_buf_s = ProtoField.uint8("pdj_status.buf_s", "Buffer Status", base.HEX, pdj_status_buffer)
+pdj_status_f.t0a_mt = ProtoField.uint8("pdj_status.mt", "Master Tempo", base.HEX, pdj_status_off_on)
+pdj_status_f.t0a_key = ProtoField.uint24("pdj_status.key", "Key", base.HEX, pdj_status_key)
+pdj_status_f.t0a_key_shift = ProtoField.int64("pdj_status.key_shift", "Key Shift (cents)", base.DEC)
 pdj_status_f.t0a_loop_s  = ProtoField.uint32("pdj_status.loop_s", "Loop Start", base.HEX)
 pdj_status_f.t0a_loop_e  = ProtoField.uint32("pdj_status.loop_e", "Loop End", base.HEX)
 pdj_status_f.t0a_loop_b  = ProtoField.uint16("pdj_status.loop_b", "Loop Beats", base.DEC)
 
+
+-- Mixers send these
 pdj_status_f.t29_unk0 = ProtoField.uint8("pdj_status.unk0", "Unknown 0", base.HEX)
 pdj_status_f.t29_unk1 = ProtoField.uint8("pdj_status.unk1", "Unknown 1", base.HEX)
 pdj_status_f.t29_length = ProtoField.uint16("pdj_status.length", "Length", base.DEC)
@@ -281,7 +324,19 @@ function p_pdj_status.dissector (buf, pkt, root)
     subtree:add(pdj_status_f.t0a_mh, buf(0x9f,1))
     subtree:add(pdj_status_f.t0a_beat, buf(0xa0,4))
     subtree:add(pdj_status_f.t0a_bb, buf(0xa6,1))
-    subtree:add(pdj_status_f.t0a_cue, buf(0xa4,2))
+
+    local cue_ptr = buf(0xa4,2)
+    local cue = cue_ptr:uint();
+    local cue_display = "--.-"
+    if cue >= 1 and cue <= 256 then
+       local cue_bars = (cue - 1) // 4
+       local cue_beats = ((cue - 1) % 4) + 1
+       cue_display = string.format("%02d.%d", cue_bars, cue_beats);
+    elseif cue == 0 then
+       cue_display = "00.0"
+    end
+    subtree:add(pdj_status_f.t0a_cue, cue_ptr, cue, nil, "(" .. cue_display .. " bars)")
+
     subtree:add(pdj_status_f.t0a_packet, buf(0xc8,4))
     subtree:add(pdj_status_f.t0a_nx, buf(0xcc,1))
 
@@ -297,7 +352,12 @@ function p_pdj_status.dissector (buf, pkt, root)
     end
 
     if buf_len > 0x1cf then
-       -- TODO: Add master tempo, key, and key shift values for CDJ-3000
+       subtree:add(pdj_status_f.t0a_mt, buf(0x158,1))
+       subtree:add(pdj_status_f.t0a_key, buf(0x15c,3))
+       local key_shift_ptr = buf(0x164,8);
+       local key_shift = key_shift_ptr:int64()
+       local key_shift_display = key_shift / 100
+       subtree:add(pdj_status_f.t0a_key_shift, key_shift_ptr, key_shift, nil, "(" .. key_shift_display .. " semitones)")
 
        local loop_s_ptr = buf(0x1b6,4)
        local loop_s = loop_s_ptr:uint()
