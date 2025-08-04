@@ -107,8 +107,8 @@ local pdj_status_nexus = {
 
 local pdj_status_waveform_colors = {
    [0x01] = "Blue",
-   [0x02] = "RGB",
-   [0x03] = "3-Band"
+   [0x03] = "RGB",
+   [0x04] = "3-Band"
 }
 
 local pdj_status_waveform_positions = {
