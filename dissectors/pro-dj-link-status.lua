@@ -128,29 +128,53 @@ local pdj_status_off_on = {
 
 local pdj_status_key = {
    [0x000000] = "Am",
+   [0x000064] = "Am (pitch shifted)",
    [0x0100ff] = "B♭m",
+   [0x010064] = "B♭m (pitch shifted)",
    [0x020000] = "Bm",
+   [0x020064] = "Bm (pitch shifted)",
    [0x030000] = "Cm",
+   [0x030064] = "Cm (pitch shifted)",
    [0x040001] = "C♯m",
+   [0x040064] = "C♯m (pitch shifted)",
    [0x050000] = "Dm",
+   [0x050064] = "Dm (pitch shifted)",
    [0x0600ff] = "E♭m",
+   [0x060064] = "E♭m (pitch shifted)",
    [0x070000] = "Em",
+   [0x070064] = "Em (pitch shifted)",
    [0x080000] = "Fm",
+   [0x080064] = "Fm (pitch shifted)",
    [0x090001] = "F♯m",
+   [0x090064] = "F♯m (pitch shifted)",
    [0x0a0000] = "Gm",
+   [0x0a0064] = "Gm (pitch shifted)",
    [0x0b00ff] = "A♭m",
+   [0x0b0064] = "A♭m (pitch shifted)",
    [0x000100] = "C",
+   [0x000164] = "C (pitch shifted)",
    [0x0101ff] = "D♭",
+   [0x010164] = "D♭ (pitch shifted)",
    [0x020100] = "D",
+   [0x020164] = "D (pitch shifted)",
    [0x0301ff] = "E♭",
+   [0x030164] = "E♭ (pitch shifted)",
    [0x040100] = "E",
+   [0x040164] = "E (pitch shifted)",
    [0x050100] = "F",
+   [0x050164] = "F (pitch shifted)",
    [0x060101] = "F♯",
+   [0x060164] = "F♯ (pitch shifted)",
    [0x070100] = "G",
+   [0x070164] = "G (pitch shifted)",
    [0x0801ff] = "A♭",
+   [0x080164] = "A♭ (pitch shifted)",
    [0x090100] = "A",
+   [0x090164] = "A (pitch shifted)",
    [0x0a01ff] = "B♭",
-   [0x0b0100] = "B"
+   [0x0a0164] = "B♭ (pitch shifted)",
+   [0x0b0100] = "B",
+   [0x0b0164] = "B (pitch shifted)"
 }
 
 local pdj_status_f = p_pdj_status.fields
@@ -296,31 +320,30 @@ function p_pdj_status.dissector (buf, pkt, root)
 
     local pitch1_ptr = buf(0x8c,4)
     local pitch1 = pitch1_ptr:uint()
-    local pitch1_display = ((pitch1 - 0x100000) / 0x100000) * 100
+    local pitch1_percent = ((pitch1_ptr:uint() - 0x100000) / 0x100000) * 100  -- for use with BPM, below
+    local pitch1_display = string.format("%+.2f", pitch1_percent)
     subtree:add(pdj_status_f.t0a_pitch1, pitch1_ptr, pitch1, nil, "(" .. pitch1_display .. "%)")
 
     local pitch2_ptr = buf(0x98,4)
     local pitch2 = pitch2_ptr:uint()
-    local pitch2_display = ((pitch2 - 0x100000) / 0x100000) * 100
+    local pitch2_display = string.format("%+.2f", ((pitch2 - 0x100000) / 0x100000) * 100)
     subtree:add(pdj_status_f.t0a_pitch2, pitch2_ptr, pitch2, nil, "(" .. pitch2_display .. "%)")
 
     local pitch3_ptr = buf(0xc0,4)
     local pitch3 = pitch3_ptr:uint()
-    local pitch3_display = ((pitch3 - 0x100000) / 0x100000) * 100
+    local pitch3_display = string.format("%+.2f", ((pitch3 - 0x100000) / 0x100000) * 100)
     subtree:add(pdj_status_f.t0a_pitch3, pitch3_ptr, pitch3, nil, "(" .. pitch3_display .. "%)")
 
     local pitch4_ptr = buf(0xc4,4)
     local pitch4 = pitch4_ptr:uint()
-    local pitch4_display = ((pitch4 - 0x100000) / 0x100000) * 100
+    local pitch4_display = string.format("%+.2f", ((pitch4 - 0x100000) / 0x100000) * 100)
     subtree:add(pdj_status_f.t0a_pitch4, pitch4_ptr, pitch4, nil, "(" .. pitch4_display .. "%)")
 
     local bpm_ptr = buf(0x92,2)
-    local bpm = bpm_ptr:uint() 
-    local bpm_display = "Unknown"
-    if bpm ~= 0xFFFF then
-      bpm_display = bpm / 10
-    end
-    subtree:add(pdj_status_f.t0a_bpm, bpm_ptr, bpm, nil, "(" .. bpm_display .. " bpm)")
+    local bpm = bpm_ptr:uint() / 100
+    local effective_tempo = bpm * (100 + pitch1_percent) / 100
+    local bpm_display = string.format("(%.1f bpm; effective tempo: %.1f bpm)", bpm, effective_tempo)
+    subtree:add(pdj_status_f.t0a_bpm, bpm_ptr, bpm, nil, bpm_display)
 
     subtree:add(pdj_status_f.t0a_mv, buf(0x90,2))
     subtree:add(pdj_status_f.t0a_mm, buf(0x9e,1))
@@ -395,7 +418,7 @@ function p_pdj_status.dissector (buf, pkt, root)
 
     local pitch_ptr = buf(0x28,4)
     local pitch = pitch_ptr:uint()
-    local pitch_display = ((pitch - 0x100000) / 0x100000) * 100
+    local pitch_display = string.format("%+.2f", ((pitch - 0x100000) / 0x100000) * 100)
     subtree_flags = subtree:add(pdj_status_f.t29_pitch, pitch_ptr, pitch, nil, "(" .. pitch_display .. "%)")
     subtree_flags = subtree:add(pdj_status_f.t29_unk3, buf(0x2c,2))
 
