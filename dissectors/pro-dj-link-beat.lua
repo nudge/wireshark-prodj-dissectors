@@ -1,5 +1,5 @@
 -- AlphaTheta PRO DJ LINK Wireshark Dissectors
--- 
+--
 -- by David Ng
 -- Copyright 2025 Cardinia Electronics
 --
@@ -13,7 +13,7 @@
 -- Licensed under the Apache License, Version 2.0 (the "License");
 -- you may not use this file except in compliance with the License.
 -- You may obtain a copy of the License at
--- 
+--
 --    http://www.apache.org/licenses/LICENSE-2.0
 --
 -- Unless required by applicable law or agreed to in writing, software
@@ -59,6 +59,18 @@ pdj_beat_f.t0b_track_len = ProtoField.uint32("pdj_beat.track_len", "Track Length
 pdj_beat_f.t0b_playhead = ProtoField.uint32("pdj_beat.playhead", "Playhead (ms)", base.DEC)
 pdj_beat_f.t0b_pitch = ProtoField.int32("pdj_beat.pitch", "Pitch", base.DEC)
 pdj_beat_f.t0b_bpm = ProtoField.uint32("pdj_beat.bpm", "BPM", base.DEC)
+
+pdj_beat_f.t28_next_beat = ProtoField.uint32("pdj_beat.next_beat", "Next Beat (ms)", base.DEC)
+pdj_beat_f.t28_second_beat = ProtoField.uint32("pdj_beat.second_beat", "Second Beat (ms)", base.DEC)
+pdj_beat_f.t28_next_bar = ProtoField.uint32("pdj_beat.next_bar", "Next Bar (ms)", base.DEC)
+pdj_beat_f.t28_fourth_beat = ProtoField.uint32("pdj_beat.fourth_beat", "Fourth Beat (ms)", base.DEC)
+pdj_beat_f.t28_second_bar = ProtoField.uint32("pdj_beat.second_bar", "Second Bar (ms)", base.DEC)
+pdj_beat_f.t28_eighth_beat = ProtoField.uint32("pdj_beat.eighth_beat", "Eighth Beat (ms)", base.DEC)
+pdj_beat_f.t28_pitch = ProtoField.uint32("pdj_beat.pitch", "Pitch", base.HEX)
+pdj_beat_f.t28_bpm = ProtoField.uint16("pdj_beat.bpm", "BPM", base.HEX)
+pdj_beat_f.t28_beat = ProtoField.uint8("pdj_beat.beat", "Beat in Bar", base.DEC)
+pdj_beat_f.t28_device = ProtoField.uint8("pdj_beat.device2", "Device Number 2", base.DEC)
+
 
 -- AlphaTheta PRO DJ LINK Protocol (Beat): Dissector
 function p_pdj_beat.dissector (buf, pkt, root)
@@ -111,9 +123,31 @@ function p_pdj_beat.dissector (buf, pkt, root)
   -- Unknown
   subtree:add(pdj_beat_f.unk0, buf(0x1f,1))
   subtree:add(pdj_beat_f.unk1, buf(0x20,1))
-  
+
+  -- Beat
+  if packet_type == 0x28 then
+     subtree:add(pdj_beat_f.t28_next_beat, buf(0x24,4))
+     subtree:add(pdj_beat_f.t28_second_beat, buf(0x28,4))
+     subtree:add(pdj_beat_f.t28_next_bar, buf(0x2c,4))
+     subtree:add(pdj_beat_f.t28_fourth_beat, buf(0x30,4))
+     subtree:add(pdj_beat_f.t28_second_bar, buf(0x34,4))
+     subtree:add(pdj_beat_f.t28_eighth_beat, buf(0x38,4))
+
+     local pitch_ptr = buf(0x54,4)
+     local pitch = pitch_ptr:uint()
+     local pitch_display = ((pitch - 0x100000) / 0x100000) * 100
+     subtree:add(pdj_beat_f.t28_pitch, pitch_ptr, pitch, nil, "(" .. pitch_display .. "%)")
+
+     local bpm_ptr = buf(0x5a,2)
+     local bpm = bpm_ptr:uint()
+     local bpm_display = bpm / 100
+     subtree:add(pdj_beat_f.t28_bpm, bpm_ptr, bpm, nil, "(" .. bpm_display .. " bpm)")
+
+     subtree:add(pdj_beat_f.t28_beat, buf(0x5c,1))
+     subtree:add(pdj_beat_f.t28_device, buf(0x5f,1))
+
   -- On-Air
-  if packet_type == 0x03 then
+  elseif packet_type == 0x03 then
     subtree:add(pdj_beat_f.t03_fader1, buf(0x24,1))
     subtree:add(pdj_beat_f.t03_fader2, buf(0x25,1))
     subtree:add(pdj_beat_f.t03_fader3, buf(0x26,1))
@@ -128,7 +162,7 @@ function p_pdj_beat.dissector (buf, pkt, root)
     local pitch_ptr = buf(0x2c,4)
     local pitch = pitch_ptr:int()
     local pitch_display = pitch / 100
-    
+
     local bpm_ptr = buf(0x38,4)
     local bpm = bpm_ptr:uint()
     local bpm_display = "Unknown"
@@ -142,7 +176,7 @@ function p_pdj_beat.dissector (buf, pkt, root)
     subtree:add(pdj_beat_f.t0b_bpm, bpm_ptr, bpm, nil, "(" .. bpm_display .. " bpm)")
 
   end
-  
+
 end
 
 
