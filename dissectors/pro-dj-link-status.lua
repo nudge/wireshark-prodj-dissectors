@@ -340,9 +340,9 @@ function p_pdj_status.dissector (buf, pkt, root)
     subtree:add(pdj_status_f.t0a_pitch4, pitch4_ptr, pitch4, nil, "(" .. pitch4_display .. "%)")
 
     local bpm_ptr = buf(0x92,2)
-    local bpm = bpm_ptr:uint() / 100
-    local effective_tempo = bpm * (100 + pitch1_percent) / 100
-    local bpm_display = string.format("(%.1f bpm; effective tempo: %.1f bpm)", bpm, effective_tempo)
+    local bpm = bpm_ptr:uint()
+    local effective_tempo = bpm / 100 * (100 + pitch1_percent) / 100
+    local bpm_display = string.format("(%.1f bpm; effective tempo: %.1f bpm)", bpm / 100, effective_tempo)
     subtree:add(pdj_status_f.t0a_bpm, bpm_ptr, bpm, nil, bpm_display)
 
     subtree:add(pdj_status_f.t0a_mv, buf(0x90,2))
