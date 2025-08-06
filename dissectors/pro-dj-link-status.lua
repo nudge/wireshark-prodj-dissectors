@@ -347,6 +347,7 @@ function p_pdj_status.dissector (buf, pkt, root)
       effective_tempo = bpm / 100 * (100 + pitch1_percent) / 100
       bpm_display = string.format("(%.1f bpm; effective tempo: %.1f bpm)", bpm / 100, effective_tempo)
     end
+    subtree:add(pdj_status_f.t0a_bpm, bpm_ptr, bpm, nil, bpm_display)
 
     subtree:add(pdj_status_f.t0a_mv, buf(0x90,2))
     subtree:add(pdj_status_f.t0a_mm, buf(0x9e,1))
