@@ -126,7 +126,7 @@ function p_pdj_announce.dissector (buf, pkt, root)
 
   -- Create subtree
   local subtree = root:add(
-    p_pdj_status,
+    p_pdj_announce,
     buf(0,buf_len),
     "AlphaTheta PRO DJ LINK Protocol (Announce), Type: " .. packet_type_description .. ", From: " .. name
   )
